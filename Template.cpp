@@ -2,6 +2,8 @@
 #include "daisysp.h"
 #include "../../lib/daisy_dpt.h"
 
+#include "my_looper.h"
+
 /*
     Hello, friend. Here is a minimal, normal DPT template w/ a few notes / examples.
 
@@ -18,10 +20,12 @@ using namespace dpt;
 
 DPT patch;
 
-Looper              looper_l;
-Looper              looper_r;
+MyLooper              looper_l;
+MyLooper              looper_r;
 float DSY_SDRAM_BSS buffer_l[kBuffSize];
 float DSY_SDRAM_BSS buffer_r[kBuffSize];
+
+float cv6_state = 0.0f;
 
 void dac7554callback(void *data) {
     /*
@@ -69,8 +73,17 @@ void AudioCallback(AudioHandle::InputBuffer in,
         looper_r.Clear();
     }
 
-    patch.WriteCvOut(1, last_state ? -5.0 : 10.0, false);
+    if (looper_l.length_setting) {
+        patch.WriteCvOut(3, -5.0, false);    
+    } else if (looper_l.length_set) {
+        patch.WriteCvOut(3, 5.0, false);
+    } else {
+        patch.WriteCvOut(3, 0.0, false);
+    }
+
+    patch.WriteCvOut(CV_OUT_1, last_state ? -5.0 : 10.0, false);
     //patch.WriteCvOut(2, last_state ? -5.0 : 10.0, false);
+    patch.WriteCvOut(CV_OUT_2, cv6_state, false);
  
     // Process audio
     for(size_t i = 0; i < size; i++)
@@ -129,10 +142,11 @@ int main(void)
     looper_l.SetMode(Looper::Mode::FRIPPERTRONICS);
     looper_r.SetMode(Looper::Mode::FRIPPERTRONICS);
 
+
+    patch.midi.StartReceive();
+
     // Start the audio callback
     patch.StartAudio(AudioCallback);
-
-    // patch.midi.StartReceieve()
 
     while(1)
     {
@@ -152,5 +166,25 @@ int main(void)
                 ...
             };
         */
+        patch.midi.Listen();
+
+        while(patch.midi.HasEvents()) {
+            cv6_state = 5.0f;
+            //patch.WriteCvOut(CV_6, 1.0, false);
+            auto event = patch.midi.PopEvent();
+            if (event.type==MidiMessageType::SystemRealTime && event.srt_type==SystemRealTimeType::Start) {
+                dsy_gpio_write(&patch.gate_out_2, 1);
+                //patch.WriteCvOut(CV_6, 5.0, false);
+                looper_l.LoopStart();
+                looper_r.LoopStart();
+            } else if(event.type  == MidiMessageType::NoteOn) {
+                dsy_gpio_write(&patch.gate_out_1, 1);
+            } else if(event.type  == MidiMessageType::NoteOff) {
+                dsy_gpio_write(&patch.gate_out_1, 0);
+            } else {
+                dsy_gpio_write(&patch.gate_out_2, 0);
+            }
+        }
+        cv6_state = -5.0f;
     }
 }
