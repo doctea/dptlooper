@@ -2,6 +2,7 @@
 #include "daisysp.h"
 #include "../../lib/daisy_dpt.h"
 
+#include "looper.h"
 #include "my_looper.h"
 
 /*
@@ -15,6 +16,7 @@
 #define kBuffSize 48000 * 60 // 60 seconds at 48kHz
 
 using namespace daisy;
+using namespace daisysp_custom;
 using namespace daisysp;
 using namespace dpt;
 
@@ -84,6 +86,10 @@ void AudioCallback(AudioHandle::InputBuffer in,
     patch.WriteCvOut(CV_OUT_1, last_state ? -5.0 : 10.0, false);
     //patch.WriteCvOut(2, last_state ? -5.0 : 10.0, false);
     patch.WriteCvOut(CV_OUT_2, cv6_state, false);
+
+    //float speed_knob = patch.controls[CV_8].Value();
+    //looper_l.SetSpeed(speed_knob);
+    //looper_r.SetSpeed(speed_knob);
  
     // Process audio
     for(size_t i = 0; i < size; i++)
@@ -139,14 +145,17 @@ int main(void)
     looper_l.Init(buffer_l, kBuffSize);
     looper_r.Init(buffer_r, kBuffSize);
 
-    looper_l.SetMode(Looper::Mode::FRIPPERTRONICS);
-    looper_r.SetMode(Looper::Mode::FRIPPERTRONICS);
+    looper_l.SetMode(daisysp_custom::Looper::Mode::FRIPPERTRONICS);
+    looper_r.SetMode(daisysp_custom::Looper::Mode::FRIPPERTRONICS);
 
 
     patch.midi.StartReceive();
 
     // Start the audio callback
     patch.StartAudio(AudioCallback);
+
+    static unsigned long last_clock = daisy::System::GetUs();
+    static unsigned long us_between_ticks = 2033;
 
     while(1)
     {
@@ -174,7 +183,10 @@ int main(void)
             auto event = patch.midi.PopEvent();
             if (event.type==MidiMessageType::SystemRealTime) {
                 dsy_gpio_write(&patch.gate_out_2, 1);
-                if(event.srt_type==SystemRealTimeType::Start) {
+                if (event.srt_type==SystemRealTimeType::TimingClock) {
+                    looper_l.ReceiveTick();
+                    looper_r.ReceiveTick();
+                } else if(event.srt_type==SystemRealTimeType::Start) {
                     //patch.WriteCvOut(CV_6, 5.0, false);
                     looper_l.LoopStart();
                     looper_r.LoopStart();

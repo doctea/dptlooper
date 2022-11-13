@@ -1,10 +1,10 @@
 # Project Name
-TARGET = Template
+TARGET = Looper
 
 USE_FATFS = 1
 
 # Sources
-CPP_SOURCES = Template.cpp ../../lib/daisy_dpt.cpp ../../lib/dev/DAC7554.cpp
+CPP_SOURCES = Looper.cpp ../../lib/daisy_dpt.cpp ../../lib/dev/DAC7554.cpp
 
 # Library Locations
 LIBDAISY_DIR = ../../libDaisy/
