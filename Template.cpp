@@ -172,19 +172,24 @@ int main(void)
             cv6_state = 5.0f;
             //patch.WriteCvOut(CV_6, 1.0, false);
             auto event = patch.midi.PopEvent();
-            if (event.type==MidiMessageType::SystemRealTime && event.srt_type==SystemRealTimeType::Start) {
+            if (event.type==MidiMessageType::SystemRealTime) {
                 dsy_gpio_write(&patch.gate_out_2, 1);
-                //patch.WriteCvOut(CV_6, 5.0, false);
-                looper_l.LoopStart();
-                looper_r.LoopStart();
+                if(event.srt_type==SystemRealTimeType::Start) {
+                    //patch.WriteCvOut(CV_6, 5.0, false);
+                    looper_l.LoopStart();
+                    looper_r.LoopStart();
+                } else if (event.srt_type==SystemRealTimeType::Stop) {
+                    looper_l.SetPlaying();
+                } else if (event.srt_type==SystemRealTimeType::Continue) {
+                    looper_l.SetDubbing();
+                }
             } else if(event.type  == MidiMessageType::NoteOn) {
                 dsy_gpio_write(&patch.gate_out_1, 1);
             } else if(event.type  == MidiMessageType::NoteOff) {
                 dsy_gpio_write(&patch.gate_out_1, 0);
-            } else {
-                dsy_gpio_write(&patch.gate_out_2, 0);
-            }
+            } 
         }
+        dsy_gpio_write(&patch.gate_out_2, 0);
         cv6_state = -5.0f;
     }
 }

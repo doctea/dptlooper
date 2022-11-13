@@ -15,7 +15,7 @@ class MyLooper : public daisysp::Looper {
         void LoopStart() {
             if (length_setting) {
                 this->TrigRecord();
-                recsize_ = pos_;
+                //recsize_ = pos_;
                 length_setting = false;
                 length_set = true;
             } else if (!length_set) {
@@ -28,6 +28,16 @@ class MyLooper : public daisysp::Looper {
             } else {
                 pos_ = 0.f;
             }
+        }
+
+        void SetState(Looper::State state) {
+            state_ = state;
+        }
+        void SetPlaying() {
+            SetState(Looper::State::PLAYING);
+        }
+        void SetDubbing() {
+            SetState(Looper::State::REC_DUB);
         }
         
 };
