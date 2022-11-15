@@ -244,10 +244,10 @@ class Looper
     void InitBuff() { std::fill(&buff_[0], &buff_[buffer_size_ - 1], 0); }
 
     /** Get a floating point sample from the buffer */
-    inline const float Read(size_t pos) const { return buff_[pos]; }
+    virtual const float Read(size_t pos)  { return buff_[pos]; }
 
     /** Reads from a specified point in the delay line using linear interpolation */
-    float ReadF(float pos)
+    virtual float ReadF(float pos)
     {
         float    a, b, frac;
         uint32_t i_idx = static_cast<uint32_t>(pos);

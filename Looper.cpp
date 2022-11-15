@@ -154,8 +154,8 @@ int main(void)
     // Start the audio callback
     patch.StartAudio(AudioCallback);
 
-    static unsigned long last_clock = daisy::System::GetUs();
-    static unsigned long us_between_ticks = 2033;
+    //static unsigned long last_clock = daisy::System::GetUs();
+    //static unsigned long us_between_ticks = 2033;
 
     while(1)
     {
