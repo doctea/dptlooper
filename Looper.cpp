@@ -177,23 +177,30 @@ int main(void)
         */
         patch.midi.Listen();
 
+        static bool indicator = false;
+
         while(patch.midi.HasEvents()) {
             cv6_state = 5.0f;
             //patch.WriteCvOut(CV_6, 1.0, false);
             auto event = patch.midi.PopEvent();
             if (event.type==MidiMessageType::SystemRealTime) {
-                dsy_gpio_write(&patch.gate_out_2, 1);
+                indicator = !indicator;
+                dsy_gpio_write(&patch.gate_out_2, indicator);
                 if (event.srt_type==SystemRealTimeType::TimingClock) {
-                    looper_l.ReceiveTick();
-                    looper_r.ReceiveTick();
+                    if (patch.controls[CV_7].Value()>=0.5) {
+                        looper_l.ReceiveTick();
+                        looper_r.ReceiveTick();
+                    }
                 } else if(event.srt_type==SystemRealTimeType::Start) {
                     //patch.WriteCvOut(CV_6, 5.0, false);
                     looper_l.LoopStart();
                     looper_r.LoopStart();
                 } else if (event.srt_type==SystemRealTimeType::Stop) {
                     looper_l.SetPlaying();
+                    looper_r.SetPlaying();
                 } else if (event.srt_type==SystemRealTimeType::Continue) {
                     looper_l.SetDubbing();
+                    looper_r.SetDubbing();
                 }
             } else if(event.type  == MidiMessageType::NoteOn) {
                 dsy_gpio_write(&patch.gate_out_1, 1);
@@ -201,7 +208,7 @@ int main(void)
                 dsy_gpio_write(&patch.gate_out_1, 0);
             } 
         }
-        dsy_gpio_write(&patch.gate_out_2, 0);
+        //dsy_gpio_write(&patch.gate_out_2, 0);
         cv6_state = -5.0f;
     }
 }
